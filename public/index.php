@@ -1,20 +1,20 @@
 <?php
 
-declare(strict_types=1);
+// Front controller (toutes les requêtes passent par ici)
 
+// Autoloader de Composer
 require_once __DIR__ . '/../vendor/autoload.php';
-use MVC\App;
 
-$app = App::getInstance();
-// Le symbole "->" est un opérateur d'accès qui est utiliser pour accéder à une propriété ou appeler une méthode dans un objet.
-$app -> boot();
+// On récupère une instance de la classe App
+$app = MVC\App::getInstance();
+// Servira à ajouter mes services au conteneur
+$app->boot();
 
-var_dump($app -> container);
+// Test d'ajout de 2 services
+$app->singleton('foo', fn(MVC\App $app) => new class () {});
+$app->singleton('bar', fn(MVC\App $app) => new class () {});
 
-$app -> singleton('Mon premier service', fn(App $app) => 'instance');
-var_dump($app -> container);
-$app -> singleton('Mon deuxieme service', fn(App $app) => 'instance 2');
-var_dump($app -> container);
-
-$monService = $app -> make('Mon premier service');
-$monService = $app -> make('Mon deuxieme service');
+dd(
+    $app,
+    $app->make('bar'),
+);
