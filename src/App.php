@@ -4,50 +4,51 @@ namespace MVC;
 
 class App
 {
-    private static $_instance;
-    private function __construct() {}
+    // Cette propriété contiendra l'instance unique de ma classe App (singleton)
+    protected static App $instance;
 
-    // création d'une méthode dites (Singleton) qui fera en sortes qu'on ne puisse faire qu'une seule instance de cette classe.
-    public static function getInstance()
+    // Le service container qui est vide par défaut
+    protected array $container = [];
+
+    // Constructeur protégée pour empêcher la création avec new (singleton)
+    final protected function __construct() {}
+
+    // Seul point d'entrée pour récupérer une instance de App
+    final public static function getInstance(): App
     {
-        // création d'une structure conditionnelle, ici si $_instance est null, on lui demande de créer une nouvelle instance de App.
-        // self fait référence à la classe actuelle, elle n’est pas précédé par « $ » car « self »
-        // ne représente pas une variable mais la classe elle-même.
-        // Les :: nous permettent ici de venir accéder à notre variable static ($_instance).
-        if(is_null(self::$_instance)) {
-            self::$_instance = new App();
+        // Si la propriété statique ne contient pas d'instance, ça veut dire que c'est le premier appel de getInstance(). On vient donc créer une instance de la classe et on la stocke dans la propriété statique
+        if (! isset(static::$instance)) {
+            static::$instance = new static();
         }
-        return self::$_instance;
+
+        // Quoi qu'il arrive, on retourne l'instance
+        return static::$instance;
     }
 
-    // création de la méthode boot()
-    public function boot() {}
+    // Ajout des services au service container
+    public function boot(): void {}
 
-    // création de la propriété $container
-    public array $container = [];
-
-    // création de la méthode singleton(), avec 2 paramètres
-    public function singleton(string $name, \Closure $closure)
+    // Permet d'ajouter un service au service container
+    public function singleton(string $name, \Closure $closure): void
     {
-        // La fonction isset() vérifie si une variable (ou une clé dans le cas d'un tableau) est définie.
-        // En utilisant !isset(), on vérifie si la clé spécifiée n'existe pas.
-        if (!isset($this -> container[$name])) {
-            // si la clé n'existe pas, alors
-            // App est passé en tant qu'instance pour que les services aient accès à App si nécessaire
-            $this -> container[$name] = $closure(App::$_instance);
+        // Si le service existe déjà, je lance une exception pour ne pas l'écraser par un nouveau
+        if (isset($this->container[$name])) {
+            throw new \InvalidArgumentException('Un service porte déjà le nom ' . $name);
         }
+
+        // Sinon, j'ajoute bien mon service en exécutant la closure pour récupérer sa valeur de retour (l'instance du service)
+        $this->container[$name] = $closure($this);
+    }
+
+    // Permet de récupérer un service depuis le service container
+    public function make(string $name): mixed
+    {
+        // Si le service est introuvable, on lance une exception
+        if (! isset($this->container[$name])) {
+            throw new \InvalidArgumentException('Le service ' . $name . ' n\'existe pas');
+        }
+
+        // Sinon, on le retourne
         return $this->container[$name];
     }
-
-    // création de la fonction make() avec le nom du service recherché en paramètre
-    public function make(string $name)
-    {
-        if (isset($this -> container[$name])) {
-            return var_dump($this->container[$name]);
-        } else {
-            echo 'Ce service n\'existe pas';
-        }
-
-    }
-
 }
